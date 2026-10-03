@@ -53,3 +53,4 @@ curl -X POST http://localhost:8000/analyze -H "Content-Type: application/json" \
 pytest tests/ -q
 ```
 "# Trustguard" 
+"# Trustguard" 

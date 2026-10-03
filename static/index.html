@@ -7,12 +7,19 @@
 <meta name="description" content="Privacy-first scam analyzer for suspicious URLs and messages. 100% local, zero external calls.">
 <meta name="theme-color" content="#050807">
 
-<link rel="icon" type="image/svg+xml" href="/static/logo.svg">
+<!-- Relative asset paths + base href so the app works both at the domain
+     root (https://host/) and under a repository subpath
+     (https://divin-x5.github.io/Trustguard/). -->
+<base href="./">
+
+<link rel="icon" type="image/svg+xml" href="./logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css">
-<script src="/static/app.js" defer></script>
+<link rel="stylesheet" href="./styles.css">
+<!-- config.js must load before app.js: it defines window.TRUSTGUARD_CONFIG -->
+<script src="./config.js"></script>
+<script src="./app.js" defer></script>
 </head>
 
 <body>
@@ -26,7 +33,7 @@
 <div class="wrap">
   <header>
     <div class="brand">
-      <img class="logo" src="/static/logo.svg" width="52" height="52" alt="TrustGuard logo">
+      <img class="logo" src="./logo.svg" width="52" height="52" alt="TrustGuard logo">
       <h1 class="glitch" data-text="TRUSTGUARD">TRUSTGUARD<span class="accent">.</span><span class="caret"></span></h1>
     </div>
     <div class="tag">Think before you click. Feed me any suspicious <code>URL</code> or <code>message</code> — I inspect the link, the language, and the psychology behind it, then explain the risk like a security analyst would.</div>
@@ -54,9 +61,10 @@
         <div class="row-i"><span class="k">engine</span><b>trustguard v0.1.0</b></div>
         <div class="row-i"><span class="k">mode</span><b>heuristic / offline</b></div>
         <div class="row-i"><span class="k">signals</span><b>20+ detectors armed</b></div>
+        <div class="row-i"><span class="k">api</span><b id="apiHost">detecting...</b></div>
+        <div class="row-i"><span class="k">link</span><span id="apiStatus">○ checking...</span></div>
         <div class="row-i"><span class="k">privacy</span><span class="ok">● data stays local</span></div>
         <div class="row-i"><span class="k">telemetry</span><span class="ok">● none</span></div>
-        <div class="row-i"><span class="k">status</span><span class="ok" id="sysStatus">● operational</span></div>
       </div>
     </div>
   </div>

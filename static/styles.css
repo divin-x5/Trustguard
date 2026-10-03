@@ -308,6 +308,7 @@ button.analyze:disabled { opacity: .55; cursor: none; }
 .intel { font-family: var(--mono); font-size: var(--fs-chip); line-height: 2.1; color: var(--muted); }
 .intel b { color: var(--green); font-weight: 500; }
 .intel .ok { color: var(--green); }
+.intel .bad { color: var(--red); }
 .intel .row-i { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed rgba(0, 255, 156, .1); }
 .intel .row-i:last-child { border-bottom: none; }
 .intel .k { color: rgba(220, 235, 225, .4); letter-spacing: .1em; }

@@ -1,20 +1,42 @@
 """TrustGuard API server."""
+import os
+import re
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 from engine import analyze_url, analyze_message, build_report
 from engine.regexes import URL_RE
-import re
 
 app = FastAPI(title="TrustGuard", version="0.1.0",
               description="Think Before You Click — privacy-first scam analysis")
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# The GitHub Pages frontend is a different origin from this API, so the browser
+# requires explicit CORS headers. Comma-separated, overridable at deploy time:
+#   TRUSTGUARD_CORS_ORIGINS="https://my.pages.dev,https://example.com"
+DEFAULT_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5500",   # VS Code Live Server / static preview
+    "https://divin-x5.github.io",
+]
+_allowed = os.getenv("TRUSTGUARD_CORS_ORIGINS", "")
+CORS_ORIGINS = [o.strip() for o in _allowed.split(",") if o.strip()] or DEFAULT_ORIGINS
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+)
 
 
 class AnalyzeRequest(BaseModel):
@@ -45,7 +67,28 @@ def health():
 
 @app.get("/api-info")
 def api_info():
-    return {"name": "TrustGuard", "version": "0.1.0", "endpoints": ["/analyze", "/health"]}
+    return {
+        "name": "TrustGuard",
+        "version": "0.1.0",
+        "endpoints": ["/analyze", "/health"],
+        "allowed_origins": CORS_ORIGINS,
+    }
+
+
+# The frontend uses relative asset paths ("./styles.css") so that the exact same
+# files work when GitHub Pages publishes static/ at a repository subpath
+# (/Trustguard/) and when FastAPI serves the UI at "/". For the subpath case the
+# assets are already at the site root; for the local case they live in /static,
+# so we also expose them at the root. Registered last, so it never shadows the
+# real API routes above.
+ROOT_ASSETS = ("styles.css", "app.js", "config.js", "logo.svg")
+
+
+@app.get("/{asset_name}")
+def root_asset(asset_name: str):
+    if asset_name in ROOT_ASSETS and (STATIC_DIR / asset_name).is_file():
+        return FileResponse(STATIC_DIR / asset_name)
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 @app.post("/analyze")

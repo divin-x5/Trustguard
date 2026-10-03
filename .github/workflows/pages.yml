@@ -1,0 +1,47 @@
+name: Deploy TrustGuard frontend to GitHub Pages
+
+# Publishes the contents of static/ to GitHub Pages.
+# The Python/FastAPI backend is NOT deployed here - it runs separately
+# (see README "Deploy the backend"). The frontend reaches it via the
+# API_BASE_URL setting in static/config.js.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'static/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once; let a newer commit supersede an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        id: upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # This is the folder that becomes the website root, so
+          # index.html lands on https://divin-x5.github.io/Trustguard/
+          path: static
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

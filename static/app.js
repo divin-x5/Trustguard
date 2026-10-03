@@ -6,6 +6,35 @@
 
 const $ = id => document.getElementById(id);
 
+/* ---------- API base URL resolution ----------
+   Priority:
+     1. window.TRUSTGUARD_CONFIG.API_BASE_URL (edit static/config.js)
+     2. auto: localhost -> http://localhost:8000, else same origin
+   Works whether the page is served by FastAPI on :8000 or by
+   GitHub Pages from a repository subpath. */
+const LOCAL_API = 'http://localhost:8000';
+const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+
+function resolveApiBase() {
+  const configured = (window.TRUSTGUARD_CONFIG?.API_BASE_URL || '').trim();
+  if (configured) return configured.replace(/\/+$/, '');
+  if (IS_LOCAL) return LOCAL_API;
+  return location.origin; // same origin (e.g. FastAPI serving its own UI)
+}
+
+const API_BASE_URL = resolveApiBase();
+const apiUrl = path => API_BASE_URL + path;
+
+/* Human-readable host shown in the SYSTEM INTEL panel. */
+function describeApi() {
+  try {
+    const u = new URL(API_BASE_URL);
+    return u.host + (u.pathname === '/' ? '' : u.pathname);
+  } catch {
+    return API_BASE_URL || '(not configured)';
+  }
+}
+
 const LEVELS = {
   SAFE:   { color: 'var(--green)', label: 'CLEAN',      icon: '[ OK ] ' },
   LOW:    { color: 'var(--amber)', label: 'LOW RISK',   icon: '[ .. ] ' },
@@ -92,6 +121,41 @@ function observeReveals() {
 observeReveals();
 new MutationObserver(observeReveals).observe(document.body, { childList: true });
 
+/* ---------- API connectivity indicator ---------- */
+async function checkApi() {
+  const hostEl = $('apiHost');
+  const statusEl = $('apiStatus');
+  if (hostEl) hostEl.textContent = describeApi();
+  if (!statusEl) return;
+
+  // An explicit http:// URL on an https:// page can never work: the browser
+  // blocks it as mixed content before the request is even sent.
+  if (/^http:\/\//i.test(API_BASE_URL) && location.protocol === 'https:') {
+    statusEl.className = 'bad';
+    statusEl.textContent = '✕ blocked — API must be https';
+    return;
+  }
+
+  statusEl.className = '';
+  statusEl.textContent = '○ checking...';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(apiUrl('/health'), { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json().catch(() => ({}));
+    statusEl.className = 'ok';
+    statusEl.textContent = '● online' + (data.status ? ' (' + data.status + ')' : '');
+  } catch {
+    statusEl.className = 'bad';
+    statusEl.textContent = IS_LOCAL ? '✕ backend offline' : '✕ unreachable — check config.js';
+  }
+}
+
+checkApi();
+setInterval(checkApi, 30000);
+
 /* ---------- app logic ---------- */
 document.querySelectorAll('.chip').forEach(c =>
   c.addEventListener('click', () => {
@@ -115,7 +179,7 @@ async function analyze() {
   $('go').disabled = true;
   $('status').textContent = '> resolving target... scanning language patterns... correlating signals';
   try {
-    const res = await fetch('/analyze', {
+    const res = await fetch(apiUrl('/analyze'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text })
@@ -128,7 +192,9 @@ async function analyze() {
     }
     render(data);
   } catch {
-    showError('ERR: cannot reach TrustGuard engine — is the server running?');
+    showError(IS_LOCAL
+      ? 'ERR: cannot reach TrustGuard engine — is the server running on ' + LOCAL_API + '?'
+      : 'ERR: cannot reach the TrustGuard API at ' + describeApi() + ' — check static/config.js');
   } finally {
     $('go').disabled = false;
     $('status').textContent = '';
