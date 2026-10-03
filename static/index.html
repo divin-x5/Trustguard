@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustGuard — Think Before You Click</title>
+<meta name="description" content="Privacy-first scam analyzer for suspicious URLs and messages. 100% local, zero external calls.">
+<meta name="theme-color" content="#050807">
+
+<link rel="icon" type="image/svg+xml" href="/static/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+<script src="/static/app.js" defer></script>
+</head>
+
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="scanbeam" aria-hidden="true"></div>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="cursor" id="cur" aria-hidden="true"></div>
+<div class="cursor-dot" id="curdot" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img class="logo" src="/static/logo.svg" width="52" height="52" alt="TrustGuard logo">
+      <h1 class="glitch" data-text="TRUSTGUARD">TRUSTGUARD<span class="accent">.</span><span class="caret"></span></h1>
+    </div>
+    <div class="tag">Think before you click. Feed me any suspicious <code>URL</code> or <code>message</code> — I inspect the link, the language, and the psychology behind it, then explain the risk like a security analyst would.</div>
+    <div class="badge"><span class="dot"></span>100% LOCAL // DATA NEVER LEAVES THIS DEVICE</div>
+  </header>
+
+  <div class="grid">
+    <div class="card reveal">
+      <h2>Target Input</h2>
+      <textarea id="input" placeholder="paste suspicious link or message here..."></textarea>
+      <div class="chips">
+        <button class="chip" data-ex="https://sbi-secure-login.xyz/verify-account">phishing_url</button>
+        <button class="chip" data-ex="URGENT! Your bank account will be blocked today. Verify immediately: http://sbi-login.xyz/otp">scam_sms</button>
+        <button class="chip" data-ex="Dear customer, your KYC has expired. Update at https://paytm-kyc-update.blogspot.com/kyc.html">kyc_scam</button>
+        <button class="chip" data-ex="Hey, are we still meeting for lunch tomorrow?">normal_msg</button>
+      </div>
+      <div class="row"><button class="analyze" id="go">▶ RUN ANALYSIS</button></div>
+      <div class="status" id="status"></div>
+      <div class="error" id="error"></div>
+    </div>
+
+    <div class="card reveal">
+      <h2>System Intel</h2>
+      <div class="intel">
+        <div class="row-i"><span class="k">engine</span><b>trustguard v0.1.0</b></div>
+        <div class="row-i"><span class="k">mode</span><b>heuristic / offline</b></div>
+        <div class="row-i"><span class="k">signals</span><b>20+ detectors armed</b></div>
+        <div class="row-i"><span class="k">privacy</span><span class="ok">● data stays local</span></div>
+        <div class="row-i"><span class="k">telemetry</span><span class="ok">● none</span></div>
+        <div class="row-i"><span class="k">status</span><span class="ok" id="sysStatus">● operational</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card verdict" id="verdictCard">
+    <h2>Analysis Report</h2>
+    <div class="head">
+      <div class="title" id="levelText"></div>
+      <div class="scorewrap">
+        <div class="big" id="scoreNum" style="color: var(--lvl, var(--green))">0</div>
+        <div class="of">/ 100 RISK</div>
+      </div>
+    </div>
+    <div class="meter"><i id="meterFill"></i></div>
+    <div class="legend"><span>0 — low</span><span>40 — medium</span><span>70 — high</span><span>100</span></div>
+    <div class="summary" id="summaryText"></div>
+    <h2>Detected Signals</h2>
+    <div class="log" id="signals"></div>
+    <h2>Recommended Actions</h2>
+    <div class="log actions" id="actions"></div>
+    <div class="disclaimer" id="disclaimer"></div>
+  </div>
+</div>
+
+</body>
+</html>
